@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接口列表</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9fb;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .api-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .api-item {
+            background-color: #ffffff;
+            border: 1px solid #eaeaea;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .api-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-item h2 {
+            margin-top: 0;
+            color: #007BFF;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .api-item p {
+            color: #555;
+            margin: 10px 0;
+            font-size: 1em;
+        }
+
+        .api-item .method {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #fff;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .api-item .method.get {
+            background-color: #28a745;
+        }
+
+        .api-item .method.post {
+            background-color: #007BFF;
+        }
+
+        .api-item .method.put {
+            background-color: #ffc107;
+        }
+
+        .api-item .method.delete {
+            background-color: #dc3545;
+        }
+
+        .api-item .url {
+            font-family: 'Courier New', Courier, monospace;
+            color: #333;
+            font-size: 1em;
+            background-color: #f1f1f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .api-item .params {
+            margin-top: 15px;
+            padding-left: 20px;
+            border-left: 3px solid #007BFF;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .api-item .params p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .api-item .params strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .api-item .params code {
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .api-item h2 {
+                font-size: 1.5em;
+            }
+
+            .api-item p {
+                font-size: 0.9em;
+            }
+
+            .api-item .method {
+                padding: 4px 8px;
+                font-size: 0.8em;
+            }
+
+            .api-item .url {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>接口列表</h1>
+        <ul class="api-list">
+            <li class="api-item">
+                <h2>获取最新的一封邮件</h2>
+                <p><span class="method get">GET</span><span class="url">/api/mail-new</span></p>
+                <p>描述：获取最新的一封邮件。如果邮件中含有6位数字验证码，会自动提取。</p>
+                <div class="params">
+                    <p><strong>参数说明：</strong></p>
+                    <ul>
+                        <li><strong>refresh_token</strong> (必填): 用于身份验证的 refresh_token。</li>
+                        <li><strong>client_id</strong> (必填): 客户端 ID。</li>
+                        <li><strong>email</strong> (必填): 邮箱地址。</li>
+                        <li><strong>mailbox</strong> (必填): 邮箱文件夹，支持的值为 <code>INBOX</code> 或 <code>Junk</code>。</li>
+                        <li><strong>response_type</strong> (可选): 返回格式，支持的值为 <code>json</code> 或 <code>html</code>，默认为
+                            <code>json</code>。
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            <li class="api-item">
+                <h2>获取全部邮件</h2>
+                <p><span class="method get">GET</span><span class="url">/api/mail-all</span></p>
+                <p>描述：获取全部邮件。如果邮件中含有6位数字验证码，会自动提取。</p>
+                <div class="params">
+                    <p><strong>参数说明：</strong></p>
+                    <ul>
+                        <li><strong>refresh_token</strong> (必填): 用于身份验证的 refresh_token。</li>
+                        <li><strong>client_id</strong> (必填): 客户端 ID。</li>
+                        <li><strong>email</strong> (必填): 邮箱地址。</li>
+                        <li><strong>mailbox</strong> (必填): 邮箱文件夹，支持的值为 <code>INBOX</code> 或 <code>Junk</code>。</li>
+                    </ul>
+                </div>
+            </li>
+            <li class="api-item">
+                <h2>清空收件箱</h2>
+                <p><span class="method get">GET</span><span class="url">/api/process-inbox</span></p>
+                <p>描述：清空收件箱。</p>
+                <div class="params">
+                    <p><strong>参数说明：</strong></p>
+                    <ul>
+                        <li><strong>refresh_token</strong> (必填): 用于身份验证的 refresh_token。</li>
+                        <li><strong>client_id</strong> (必填): 客户端 ID。</li>
+                        <li><strong>email</strong> (必填): 邮箱地址。</li>
+                    </ul>
+                </div>
+            </li>
+            <li class="api-item">
+                <h2>清空垃圾箱</h2>
+                <p><span class="method get">GET</span><span class="url">/api/process-junk</span></p>
+                <p>描述：清空垃圾箱。</p>
+                <div class="params">
+                    <p><strong>参数说明：</strong></p>
+                    <ul>
+                        <li><strong>refresh_token</strong> (必填): 用于身份验证的 refresh_token。</li>
+                        <li><strong>client_id</strong> (必填): 客户端 ID。</li>
+                        <li><strong>email</strong> (必填): 邮箱地址。</li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+
+</html>
