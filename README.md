@@ -65,7 +65,7 @@
   - `email` (必填): 邮箱地址。
 
 ## 效果图
-<img src="https://github.com/HChaoHui/msOauth2api/img/demo.png" width="800">
+<img src="https://raw.githubusercontent.com/HChaoHui/msOauth2api/refs/heads/main/img/demo.png" width="800">
 
 ## 贡献
 
@@ -79,4 +79,4 @@
 
 如果你喜欢这个项目，欢迎给它一个 Star ⭐️
 或者进行赞助
-<img src="https://github.com/HChaoHui/msOauth2api/img/demo.png" width="400">
+<img src="https://github.com/HChaoHui/msOauth2api/blob/main/img/Buy.JPG?raw=true" width="400">
