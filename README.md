@@ -78,5 +78,5 @@
 ## 支持
 
 如果你喜欢这个项目，欢迎给它一个 Star ⭐️
-或者进行赞助
+或者进行赞助  
 <img src="https://github.com/HChaoHui/msOauth2api/blob/main/img/Buy.JPG?raw=true" width="400">
