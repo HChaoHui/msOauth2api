@@ -704,7 +704,7 @@
         // 加载邮件列表
         function loadMailList(refreshToken, clientId, email, mailbox) {
             showLoading(); // 显示 Loading
-            const apiUrl = `https://msoauth2.668802.xyz/api/mail-all?refresh_token=${refreshToken}&client_id=${clientId}&email=${email}&mailbox=${mailbox}&response_type=json`;
+            const apiUrl = `/api/mail-all?refresh_token=${refreshToken}&client_id=${clientId}&email=${email}&mailbox=${mailbox}&response_type=json`;
 
             fetch(apiUrl)
                 .then(response => {
