@@ -91,6 +91,7 @@ module.exports = async (req, res) => {
                                 send: mail.from.text,
                                 subject: mail.subject,
                                 text: mail.text,
+                                date: mail.date,
                                 code: extractVerificationCode(mail.text)
                             };
 
