@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮箱系统</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            background-color: #f5f6fa;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            color: #2c3e50;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            color: #3498db;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+
+        .sidebar ul li a {
+            color: #2c3e50;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #3498db;
+            color: #ffffff;
+            transform: translateX(5px);
+        }
+
+        .sidebar ul li a.active {
+            background-color: #3498db;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .sidebar ul li a i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* 内容区域样式 */
+        .content {
+            flex-grow: 1;
+            padding: 30px;
+            background-color: #f5f6fa;
+        }
+
+        .content h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .content p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        /* 内容区域隐藏/显示 */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* 仪表盘统计卡片样式 */
+        .dashboard-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-card {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            text-align: center;
+        }
+
+        .dashboard-card h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .dashboard-card p {
+            margin: 10px 0 0;
+            font-size: 24px;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        /* 上传区域样式 */
+        .upload-section {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .upload-section .upload-box {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-section .upload-box.dragover {
+            background-color: #f0f8ff;
+            border-color: #2980b9;
+        }
+
+        .upload-section .upload-box i {
+            font-size: 24px;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .upload-section .upload-box p {
+            margin: 0;
+            color: #7f8c8d;
+        }
+
+        .upload-section .upload-box .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #3498db;
+        }
+
+        .upload-section .upload-box input[type="file"] {
+            display: none;
+        }
+
+        .upload-section .delimiter-input {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-section .delimiter-input input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        .upload-section .delimiter-input button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-section .delimiter-input button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 表格样式 */
+        .email-table,
+        .mail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .email-table th,
+        .email-table td,
+        .mail-table th,
+        .mail-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .email-table th,
+        .mail-table th {
+            background-color: #3498db;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .email-table tr:hover,
+        .mail-table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .email-table td,
+        .mail-table td {
+            word-wrap: break-word;
+        }
+
+        .email-table .refresh-token {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-table .actions,
+        .mail-table .actions {
+            white-space: nowrap;
+        }
+
+        .email-table .actions button,
+        .mail-table .actions button {
+            padding: 6px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .email-table .actions button.view,
+        .mail-table .actions button.view {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+
+        .email-table .actions button.delete,
+        .mail-table .actions button.delete {
+            background-color: #e74c3c;
+            color: #ffffff;
+        }
+
+        .email-table .actions button:hover,
+        .mail-table .actions button:hover {
+            opacity: 0.9;
+        }
+
+        /* 分页样式 */
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pagination button {
+            padding: 6px 12px;
+            margin: 0 5px;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #3498db;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .pagination button.active {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+
+        .pagination button:hover {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+
+        /* 无数据提示 */
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .modal-content p {
+            color: #7f8c8d;
+        }
+
+        .modal-content button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-content button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 邮件详情模态框样式 */
+        .mail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mail-modal-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .mail-modal-content h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .mail-modal-content p {
+            color: #7f8c8d;
+            word-wrap: break-word;
+        }
+
+        .mail-modal-content button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .mail-modal-content button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Loading 样式 */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 淡入动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+    <!-- 引入Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Loading 效果 -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="sidebar">
+        <h2>邮箱系统</h2>
+        <ul>
+            <li><a href="#" data-target="dashboard" class="active"><i class="fas fa-tachometer-alt"></i>仪表盘</a></li>
+            <li><a href="#" data-target="emails"><i class="fas fa-envelope"></i>邮箱管理</a></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <!-- 仪表盘内容 -->
+        <div id="dashboard" class="content-section active">
+            <h1>仪表盘</h1>
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <h3>账号数量</h3>
+                    <p id="account-count">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 邮箱管理内容 -->
+        <div id="emails" class="content-section">
+            <h1>邮箱管理</h1>
+            <div class="upload-section">
+                <div class="upload-box" id="upload-box">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击或拖拽文件到此处上传</p>
+                    <div class="file-info" id="file-info"></div>
+                    <input type="file" id="file-input" accept=".txt">
+                </div>
+                <div class="delimiter-input">
+                    <input type="text" id="delimiter" placeholder="输入分隔符（如 ----）">
+                    <button onclick="importEmails()">导入邮箱</button>
+                </div>
+            </div>
+            <table class="email-table" id="email-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>Client ID</th>
+                        <th>Refresh Token</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 数据将动态添加到这里 -->
+                </tbody>
+            </table>
+            <div class="no-data" id="no-data">暂无数据</div>
+            <div class="pagination" id="pagination">
+                <button onclick="changePage(1)">1</button>
+            </div>
+        </div>
+
+        <!-- 邮件列表内容 -->
+        <div id="mail-list" class="content-section">
+            <h1>邮件列表</h1>
+            <table class="mail-table" id="mail-table">
+                <thead>
+                    <tr>
+                        <th>发件人</th>
+                        <th>主题</th>
+                        <th>日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 数据将动态添加到这里 -->
+                </tbody>
+            </table>
+            <div class="no-data" id="no-data-mail">暂无数据</div>
+            <div class="pagination" id="pagination-mail">
+                <button onclick="changeMailPage(1)">1</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <button onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 邮件详情模态框 -->
+    <div class="mail-modal" id="mail-modal">
+        <div class="mail-modal-content">
+            <h3 id="mail-modal-title"></h3>
+            <p id="mail-modal-sender"></p>
+            <p id="mail-modal-subject"></p>
+            <p id="mail-modal-date"></p>
+            <p id="mail-modal-content"></p>
+            <button onclick="closeMailModal()">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量，用于存储邮件数据
+        let mailData = [];
+        let currentMailPage = 1; // 当前邮件列表的页码
+        const mailItemsPerPage = 10; // 每页显示的邮件数量
+
+        // 显示 Loading
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        // 隐藏 Loading
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // 获取所有侧边栏链接和内容区域
+        const links = document.querySelectorAll('.sidebar ul li a');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        // 监听侧边栏链接的点击事件
+        links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault(); // 阻止默认跳转行为
+
+                // 移除所有链接的选中状态
+                links.forEach(l => l.classList.remove('active'));
+                // 为当前点击的链接添加选中状态
+                link.classList.add('active');
+
+                // 获取目标内容区域的ID
+                const targetId = link.getAttribute('data-target');
+                // 隐藏所有内容区域
+                contentSections.forEach(section => section.classList.remove('active'));
+                // 显示目标内容区域
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // 分页相关变量
+        let currentPage = 1;
+        const itemsPerPage = 8; // 每页显示 8 条数据
+
+        // 从 localStorage 加载数据
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            renderTable(data);
+            renderPagination(data.length);
+            toggleNoData(data.length === 0);
+            updateDashboard(data); // 更新仪表盘数据
+        }
+
+        // 渲染表格
+        function renderTable(data) {
+            const emailTableBody = document.querySelector('#email-table tbody');
+            emailTableBody.innerHTML = '';
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = data.slice(start, end);
+
+            pageData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.email}</td>
+                    <td>${item.password}</td>
+                    <td>${item.clientId}</td>
+                    <td class="refresh-token" title="${item.refreshToken}">${item.refreshToken}</td>
+                    <td class="actions">
+                        <button class="view" onclick="viewInbox(${start + index})">收件箱</button>
+                        <button class="view" onclick="viewJunk(${start + index})">垃圾箱</button>
+                        <button class="delete" onclick="deleteEmail(${start + index})">删除</button>
+                    </td>
+                `;
+                emailTableBody.appendChild(row);
+            });
+        }
+
+        // 渲染分页控件
+        function renderPagination(totalItems) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                if (i === currentPage) {
+                    button.classList.add('active');
+                }
+                button.onclick = () => changePage(i);
+                pagination.appendChild(button);
+            }
+        }
+
+        // 切换分页
+        function changePage(page) {
+            currentPage = page;
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            renderTable(data);
+            renderPagination(data.length);
+        }
+
+        // 显示/隐藏无数据提示
+        function toggleNoData(isEmpty) {
+            const noData = document.getElementById('no-data');
+            noData.style.display = isEmpty ? 'block' : 'none';
+        }
+
+        // 查看邮件（收件箱）
+        function viewInbox(index) {
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            const item = data[index];
+
+            // 重置邮件分页为第一页
+            currentMailPage = 1;
+
+            // 加载邮件列表
+            loadMailList(item.refreshToken, item.clientId, item.email, 'INBOX');
+        }
+
+        // 查看邮件（垃圾箱）
+        function viewJunk(index) {
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            const item = data[index];
+
+            // 重置邮件分页为第一页
+            currentMailPage = 1;
+
+            // 加载邮件列表
+            loadMailList(item.refreshToken, item.clientId, item.email, 'Junk');
+        }
+
+        // 加载邮件列表
+        function loadMailList(refreshToken, clientId, email, mailbox) {
+            showLoading(); // 显示 Loading
+            const apiUrl = `https://msoauth2.668802.xyz/api/mail-all?refresh_token=${refreshToken}&client_id=${clientId}&email=${email}&mailbox=${mailbox}&response_type=json`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    // 检查响应状态码
+                    if (!response.ok) {
+                        // 如果状态码不是 2xx，抛出错误
+                        if (response.status === 500) {
+                            // 如果是 500 错误，尝试解析返回的 JSON 数据
+                            return response.json().then(errorData => {
+                                // 如果返回的错误信息是 "Nothing to fetch"，则设置 mailData 为空
+                                if (errorData.error === "Nothing to fetch") {
+                                    // 更新全局邮件数据
+                                    mailData = [];
+                                    // 隐藏其他内容区域
+                                    document.querySelectorAll('.content-section').forEach(section => {
+                                        section.classList.remove('active');
+                                    });
+                                    // 显示邮件列表区域
+                                    document.getElementById('mail-list').classList.add('active');
+                                    // 渲染邮件列表
+                                    renderMailTable(mailData);
+                                    // 返回一个 resolved 的 Promise，避免进入 catch 块
+                                    return Promise.resolve();
+                                } else {
+                                    // 其他 500 错误
+                                    throw new Error('服务器内部错误，请稍后重试。');
+                                }
+                            });
+                        } else {
+                            // 其他非 500 错误
+                            throw new Error(`请求失败，状态码：${response.status}`);
+                        }
+                    }
+                    return response.json(); // 解析 JSON 数据
+                })
+                .then(data => {
+                    // 如果 data 存在（即不是 "Nothing to fetch" 的情况），更新全局邮件数据
+                    if (data) {
+                        mailData = data;
+
+                        // 隐藏其他内容区域
+                        document.querySelectorAll('.content-section').forEach(section => {
+                            section.classList.remove('active');
+                        });
+                        // 显示邮件列表区域
+                        document.getElementById('mail-list').classList.add('active');
+                        // 渲染邮件列表
+                        renderMailTable(data);
+                    }
+                })
+                .catch(error => {
+                    console.log(error); // 打印错误信息到控制台
+                    console.error('Error fetching mail data:', error);
+
+                    // 根据错误类型显示不同的提示
+                    if (error.message.includes('服务器内部错误')) {
+                        showModal('错误', '服务器内部错误，请稍后重试。');
+                    } else {
+                        showModal('错误', '无法加载邮件数据，请检查网络连接或稍后重试。');
+                    }
+                })
+                .finally(() => {
+                    hideLoading(); // 隐藏 Loading
+                });
+        }
+
+        // 渲染邮件表格
+        function renderMailTable(data) {
+            const mailTableBody = document.querySelector('#mail-table tbody');
+            mailTableBody.innerHTML = '';
+
+            if (data.length === 0) {
+                document.getElementById('no-data-mail').style.display = 'block';
+            } else {
+                document.getElementById('no-data-mail').style.display = 'none';
+            }
+
+            const start = (currentMailPage - 1) * mailItemsPerPage;
+            const end = start + mailItemsPerPage;
+            const pageData = data.slice(start, end);
+
+            pageData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.send}</td>
+                    <td>${item.subject}</td>
+                    <td>${item.date}</td>
+                    <td class="actions">
+                        <button onclick="viewMail(${start + index})">查看</button>
+                    </td>
+                `;
+                mailTableBody.appendChild(row);
+            });
+
+            // 渲染邮件分页
+            renderMailPagination(data.length);
+        }
+
+        // 渲染邮件分页控件
+        function renderMailPagination(totalItems) {
+            const pagination = document.getElementById('pagination-mail');
+            pagination.innerHTML = '';
+
+            const totalPages = Math.ceil(totalItems / mailItemsPerPage);
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                if (i === currentMailPage) {
+                    button.classList.add('active');
+                }
+                button.onclick = () => changeMailPage(i);
+                pagination.appendChild(button);
+            }
+        }
+
+        // 切换邮件分页
+        function changeMailPage(page) {
+            currentMailPage = page;
+            renderMailTable(mailData);
+        }
+
+        // 查看邮件详情
+        function viewMail(index) {
+            const item = mailData[index];
+            if (item) {
+                document.getElementById('mail-modal-title').textContent = item.subject;
+                document.getElementById('mail-modal-sender').textContent = `发件人: ${item.send}`;
+                document.getElementById('mail-modal-subject').textContent = `主题: ${item.subject}`;
+                document.getElementById('mail-modal-date').textContent = `日期: ${item.date}`;
+                document.getElementById('mail-modal-content').textContent = `内容: ${item.text}`;
+                document.getElementById('mail-modal').style.display = 'flex';
+            } else {
+                console.error('邮件数据不存在:', index);
+            }
+        }
+
+        // 关闭邮件详情模态框
+        function closeMailModal() {
+            document.getElementById('mail-modal').style.display = 'none';
+        }
+
+        // 删除邮箱
+        function deleteEmail(index) {
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            data.splice(index, 1); // 删除指定项
+            localStorage.setItem('emailData', JSON.stringify(data)); // 更新 localStorage
+            loadData(); // 重新加载数据
+            showModal('删除成功', '邮箱已成功删除。');
+        }
+
+        // 导入邮箱功能
+        function importEmails() {
+            const delimiter = document.getElementById('delimiter').value.trim();
+            const fileInput = document.getElementById('file-input');
+
+            if (!delimiter) {
+                showModal('错误', '请输入分隔符！');
+                return;
+            }
+
+            if (fileInput.files.length === 0) {
+                showModal('错误', '请选择文件！');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const content = e.target.result;
+                const lines = content.split('\n'); // 按行分割
+                const data = JSON.parse(localStorage.getItem('emailData')) || [];
+
+                // 解析每一行
+                lines.forEach(line => {
+                    const fields = line.split(delimiter); // 按用户输入的分隔符分割
+                    if (fields.length >= 4) { // 确保有 4 个字段
+                        const email = fields[0].trim();
+                        const password = fields[1].trim();
+                        const clientId = fields[2].trim();
+                        const refreshToken = fields[3].trim();
+                        if (email && password && clientId && refreshToken) {
+                            data.push({ email, password, clientId, refreshToken });
+                        }
+                    }
+                });
+
+                // 保存到 localStorage
+                localStorage.setItem('emailData', JSON.stringify(data));
+                // 重新加载数据
+                loadData();
+
+                showModal('导入成功', `成功导入 ${lines.length} 条数据！`);
+            };
+
+            reader.readAsText(file);
+        }
+
+        // 拖拽文件上传逻辑
+        const uploadBox = document.getElementById('upload-box');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+
+        // 点击上传区域触发文件选择
+        uploadBox.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // 文件选择后显示文件名
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileInfo.textContent = `已选择文件：${fileInput.files[0].name}`;
+            }
+        });
+
+        // 拖拽文件进入区域
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+
+        // 拖拽文件离开区域
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+
+        // 拖拽文件释放
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files; // 将拖拽的文件赋值给 input
+                fileInfo.textContent = `已选择文件：${files[0].name}`;
+            }
+        });
+
+        // 模态框功能
+        const modal = document.getElementById('modal');
+
+        // 显示模态框
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').innerHTML = message;
+            modal.style.display = 'flex';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        // 更新仪表盘数据
+        function updateDashboard(data) {
+            const accountCount = data.length;
+            // 更新统计卡片
+            document.getElementById('account-count').textContent = accountCount;
+        }
+
+        // 页面加载时加载数据
+        window.onload = loadData;
+    </script>
+
+</body>
+
+</html>
