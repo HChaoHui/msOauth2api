@@ -91,6 +91,7 @@ module.exports = async (req, res) => {
                                 send: mail.from.text,
                                 subject: mail.subject,
                                 text: mail.text,
+                                date: mail.date,
                                 code: extractVerificationCode(mail.text)
                             };
 
@@ -105,6 +106,7 @@ module.exports = async (req, res) => {
                                                 <h1 style="color: #333;">邮件信息</h1>
                                                 <p><strong>发件人:</strong> ${responseData.send}</p>
                                                 <p><strong>主题:</strong> ${responseData.subject}</p>
+                                                <p><strong>日期:</strong> ${responseData.date}</p>
                                                 <div style="background: #f4f4f4; padding: 10px; border: 1px solid #ddd;">
                                                     <p><strong>内容:</strong></p>
                                                     <p>${responseData.text.replace(/\n/g, '<br>')}</p>
