@@ -1,7 +1,27 @@
 {
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/doc/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/doc/$1"
+    },
+    {
+      "src": "/mail.html",
+      "dest": "/public/mail.html"
     }
-  }
+  ],
+  "headers": [
+    {
+      "source": "/mail.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
 }
