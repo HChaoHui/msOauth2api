@@ -4,21 +4,16 @@
       "NODE_ENV": "production"
     }
   },
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/doc/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/doc/$1"
-    },
-    {
-      "source": "/mail.html",
-      "destination": "/public/mail.html"
-    }
-  ],
   "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=31536000, immutable"
+        }
+      ]
+    },
     {
       "source": "/mail.html",
       "headers": [
