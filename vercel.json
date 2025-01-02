@@ -4,18 +4,18 @@
       "NODE_ENV": "production"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/doc/index.html"
+      "source": "/",
+      "destination": "/doc/index.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/doc/$1"
+      "source": "/(.*)",
+      "destination": "/doc/$1"
     },
     {
-      "src": "/mail.html",
-      "dest": "/public/mail.html"
+      "source": "/mail.html",
+      "destination": "/public/mail.html"
     }
   ],
   "headers": [
