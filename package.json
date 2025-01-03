@@ -3,6 +3,7 @@
     "imap": "^0.8.19",
     "mailin": "^3.0.4",
     "mailparser": "^3.6.5",
+    "nodemailer": "^6.9.16",
     "node-imap": "^0.9.6"
   }
 }
