@@ -2,13 +2,13 @@ const nodemailer = require('nodemailer');
 
 module.exports = async (req, res) => {
 
-    const { password } = req.method === 'GET' ? req.query : req.body;
+    const { send_password } = req.method === 'GET' ? req.query : req.body;
 
     const expectedPassword = process.env.SEND_PASSWORD;
 
-    if (password !== expectedPassword) {
+    if (send_password !== expectedPassword) {
         return res.status(401).json({
-            error: '为防止发件接口被滥用，保障邮件发送服务的安全性和稳定性，我们已对接口增加了密码验证机制。请在请求时提供正确的密码以完成身份验证。如您尚未获取密码或遇到任何问题，请联系管理员。感谢您的理解与配合！,'
+            error: 'Authentication failed. Please provide valid credentials or contact administrator for access. Refer to API documentation for deployment details.'
         });
     }
 
