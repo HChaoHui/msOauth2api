@@ -35,7 +35,9 @@ const generateAuthString = (user, accessToken) => {
 }
 
 module.exports = async (req, res) => {
-    const { refresh_token, client_id, email, mailbox, response_type = 'json' } = req.query; // 从查询参数中获取
+    // 根据请求方法从 query 或 body 中获取参数
+    const params = req.method === 'GET' ? req.query : req.body;
+    const { refresh_token, client_id, email, mailbox, response_type = 'json' } = params;
 
     // 检查是否缺少必要的参数
     if (!refresh_token || !client_id || !email || !mailbox) {
@@ -70,7 +72,7 @@ module.exports = async (req, res) => {
                 const results = await new Promise((resolve, reject) => {
                     imap.search(["ALL"], (err, results) => {
                         if (err) return reject(err);
-                        const latestMail = results.slice(-1);
+                        const latestMail = results.slice(-1); // 只获取最新的一封邮件
                         resolve(latestMail);
                     });
                 });
@@ -95,6 +97,7 @@ module.exports = async (req, res) => {
                                 code: extractVerificationCode(mail.text)
                             };
 
+                            // 根据 response_type 返回 JSON 或 HTML
                             if (response_type === 'json') {
                                 res.status(200).json(responseData);
                             } else if (response_type === 'html') {

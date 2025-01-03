@@ -35,7 +35,8 @@ const generateAuthString = (user, accessToken) => {
 }
 
 module.exports = async (req, res) => {
-    const { refresh_token, client_id, email, mailbox } = req.query; // 从查询参数中获取
+    // 根据请求方法从 query 或 body 中获取参数
+    const { refresh_token, client_id, email, mailbox } = req.method === 'GET' ? req.query : req.body;
 
     // 检查是否缺少必要的参数
     if (!refresh_token || !client_id || !email || !mailbox) {
@@ -115,7 +116,7 @@ module.exports = async (req, res) => {
         });
 
         imap.once('end', () => {
-            res.status(200).json(emailList)
+            res.status(200).json(emailList);
             console.log('IMAP connection ended');
         });
 

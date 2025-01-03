@@ -2,8 +2,11 @@ const Imap = require('node-imap');
 const simpleParser = require("mailparser").simpleParser;
 
 module.exports = async (req, res) => {
-    const { refresh_token, client_id, email } = req.query;
+    // 根据请求方法从 query 或 body 中获取参数
+    const params = req.method === 'GET' ? req.query : req.body;
+    const { refresh_token, client_id, email } = params;
 
+    // 检查是否缺少必要的参数
     if (!refresh_token || !client_id || !email) {
         return res.status(400).json({ error: 'Missing required parameters: refresh_token, client_id, or email' });
     }
