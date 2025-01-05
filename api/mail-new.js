@@ -93,6 +93,7 @@ module.exports = async (req, res) => {
                                 send: mail.from.text,
                                 subject: mail.subject,
                                 text: mail.text,
+                                html: mail.html,
                                 date: mail.date,
                                 code: extractVerificationCode(mail.text)
                             };
