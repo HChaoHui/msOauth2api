@@ -11,54 +11,26 @@
   },
   "headers": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*" 
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,POST,PUT,DELETE,OPTIONS" 
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization, X-Requested-With" 
-        },
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true" 
-        }
-      ]
-    },
-    {
       "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "max-age=31536000, immutable" 
+          "value": "max-age=31536000, immutable"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*" 
         }
       ]
     },
     {
-      "source": "/mail.html", 
+      "source": "/mail.html",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate" 
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1", 
-      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    {
-      "src": "/(.*)", 
-      "dest": "/index.html" 
     }
   ]
 }
