@@ -82,19 +82,12 @@ module.exports = async (req, res) => {
                     msg.on("body", (stream, info) => {
                         simpleParser(stream, (err, mail) => {
                             if (err) throw err;
-                            function extractVerificationCode(text) {
-                                const regex = /\b\d{6}\b/;
-                                const match = text.match(regex);
-                                return match ? match[0] : "验证码未找到";
-                            }
-
                             const data = {
                                 send: mail.from.text,
                                 subject: mail.subject,
                                 text: mail.text,
                                 html: mail.html,
                                 date: mail.date,
-                                code: extractVerificationCode(mail.text)
                             };
 
                             emailList.push(data);
