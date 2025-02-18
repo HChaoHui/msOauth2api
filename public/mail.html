@@ -834,7 +834,7 @@
                 document.getElementById('mail-modal-sender').textContent = `发件人: ${item.send}`;
                 document.getElementById('mail-modal-subject').textContent = `主题: ${item.subject}`;
                 document.getElementById('mail-modal-date').textContent = `日期: ${item.date}`;
-                document.getElementById('mail-modal-content').innerHTML = `内容: ${item.html || item.data}`;
+                document.getElementById('mail-modal-content').innerHTML = `内容: ${item.html || item.text}`;
                 document.getElementById('mail-modal').style.display = 'flex';
             } else {
                 console.error('邮件数据不存在:', index);

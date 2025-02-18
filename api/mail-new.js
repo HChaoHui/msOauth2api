@@ -83,19 +83,12 @@ module.exports = async (req, res) => {
                     msg.on("body", (stream, info) => {
                         simpleParser(stream, (err, mail) => {
                             if (err) throw err;
-                            function extractVerificationCode(text) {
-                                const regex = /\b\d{6}\b/;
-                                const match = text.match(regex);
-                                return match ? match[0] : "验证码未找到";
-                            }
-
                             const responseData = {
                                 send: mail.from.text,
                                 subject: mail.subject,
                                 text: mail.text,
                                 html: mail.html,
                                 date: mail.date,
-                                code: extractVerificationCode(mail.text)
                             };
 
                             // 根据 response_type 返回 JSON 或 HTML
@@ -115,7 +108,6 @@ module.exports = async (req, res) => {
                                                     <p><strong>内容:</strong></p>
                                                     <p>${responseData.text.replace(/\n/g, '<br>')}</p>
                                                 </div>
-                                                <p><strong>验证码:</strong> <span style="font-size: 24px; color: #007BFF;">${responseData.code}</span></p>
                                             </div>
                                         </body>
                                     </html>
