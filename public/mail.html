@@ -457,6 +457,55 @@
                 opacity: 1;
             }
         }
+
+        .email-handel {
+            display: flex;
+            align-items: center;
+        }
+
+        .email-handel .delimiter-input {
+            justify-content: left;
+            margin-top: 0px;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c !important;
+            margin-left: 10px !important;
+        }
+
+        .delete-btn:hover {
+            background-color: #e74c3c !important;
+            opacity: 0.9 !important;
+        }
+
+        .pagination-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination-section .pagination {
+            margin-top: 0px;
+        }
+
+        #items-per-page {
+            /* height: 26px; */
+            padding: 6px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            color: #333;
+            font-size: 16px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="%23666" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
     </style>
     <!-- 引入Font Awesome图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -479,7 +528,7 @@
 
     <div class="content">
         <!-- 仪表盘内容 -->
-        <div id="dashboard" class="content-section active">
+        <div id="dashboard" class="content-section">
             <h1>仪表盘</h1>
             <div class="dashboard-cards">
                 <div class="dashboard-card">
@@ -490,7 +539,7 @@
         </div>
 
         <!-- 邮箱管理内容 -->
-        <div id="emails" class="content-section">
+        <div id="emails" class="content-section active">
             <h1>邮箱管理</h1>
             <div class="upload-section">
                 <div class="upload-box" id="upload-box">
@@ -502,11 +551,13 @@
                 <div class="delimiter-input">
                     <input type="text" id="delimiter" placeholder="输入分隔符（如 ----）">
                     <button onclick="importEmails()">导入邮箱</button>
+                    <button class="delete-btn" onclick="batchDelete()">批量删除</button>
                 </div>
             </div>
             <table class="email-table" id="email-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="select-all"></th>
                         <th>Email</th>
                         <th>Password</th>
                         <th>Client ID</th>
@@ -519,8 +570,18 @@
                 </tbody>
             </table>
             <div class="no-data" id="no-data">暂无数据</div>
-            <div class="pagination" id="pagination">
-                <button onclick="changePage(1)">1</button>
+            <div class="pagination-section">
+                <div class="pagination" id="pagination">
+                    <button onclick="changePage(1)">1</button>
+                </div>
+                <select id="items-per-page" onchange="changeItemsPerPage(this.value)">
+                    <option value="5">5 条/页</option>
+                    <option value="10">10 条/页</option>
+                    <option value="20">20 条/页</option>
+                    <option value="50">50 条/页</option>
+                    <option value="100">100 条/页</option>
+                    <option value="200">200 条/页</option>
+                </select>
             </div>
         </div>
 
@@ -609,7 +670,7 @@
 
         // 分页相关变量
         let currentPage = 1;
-        const itemsPerPage = 8; // 每页显示 8 条数据
+        let itemsPerPage = 5;
 
         // 从 localStorage 加载数据
         function loadData() {
@@ -631,19 +692,76 @@
 
             pageData.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.email}</td>
-                    <td>${item.password}</td>
-                    <td>${item.clientId}</td>
-                    <td class="refresh-token" title="${item.refreshToken}">${item.refreshToken}</td>
-                    <td class="actions">
-                        <button class="view" onclick="viewInbox(${start + index})">收件箱</button>
-                        <button class="view" onclick="viewJunk(${start + index})">垃圾箱</button>
-                        <button class="delete" onclick="deleteEmail(${start + index})">删除</button>
-                    </td>
-                `;
+
+                // 添加多选框
+                const checkboxCell = document.createElement('td');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.dataset.email = item.email;
+
+                checkboxCell.appendChild(checkbox);
+                row.appendChild(checkboxCell);
+
+                // 添加其他单元格
+                row.innerHTML += `
+            <td>${item.email}</td>
+            <td>${item.password}</td>
+            <td>${item.clientId}</td>
+            <td class="refresh-token" title="${item.refreshToken}">${item.refreshToken}</td>
+            <td class="actions">
+                <button class="view" onclick="viewInbox(${start + index})">收件箱</button>
+                <button class="view" onclick="viewJunk(${start + index})">垃圾箱</button>
+                <button class="delete" onclick="deleteEmail(${start + index})">删除</button>
+            </td>
+        `;
+
                 emailTableBody.appendChild(row);
             });
+        }
+
+        // 全选/全不选功能
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('select-all').addEventListener('change', function () {
+                const checkboxes = document.querySelectorAll('#email-table tbody input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateSelectedItems();
+            });
+
+            // 监听多选框的变化
+            document.querySelector('#email-table tbody').addEventListener('change', function (event) {
+                if (event.target.type === 'checkbox') {
+                    updateSelectedItems();
+                }
+            });
+        });
+
+        // 存储选中的项
+        let selectedItems = [];
+
+        // 更新选中的项
+        function updateSelectedItems() {
+            const checkboxes = document.querySelectorAll('#email-table tbody input[type="checkbox"]:checked');
+            selectedItems = Array.from(checkboxes).map(checkbox => {
+                return checkbox.dataset.email;
+            });
+        }
+
+        // 批量删除
+        function batchDelete() {
+            if (selectedItems.length === 0) {
+                alert('请选择要删除的项！');
+                return;
+            }
+
+            const confirmDelete = confirm(`确定要删除选中的 ${selectedItems.length} 项吗？`);
+            if (confirmDelete) {
+                const data = JSON.parse(localStorage.getItem('emailData')) || [];
+                const tempData = data.filter(item => !selectedItems.includes(item.email));
+                localStorage.setItem('emailData', JSON.stringify(tempData));
+                loadData()
+            }
         }
 
         // 渲染分页控件
@@ -666,6 +784,14 @@
         // 切换分页
         function changePage(page) {
             currentPage = page;
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            renderTable(data);
+            renderPagination(data.length);
+        }
+
+        function changeItemsPerPage(value) {
+            itemsPerPage = parseInt(value, 10);
+            currentPage = 1; // 切换每页显示条数时重置到第一页
             const data = JSON.parse(localStorage.getItem('emailData')) || [];
             renderTable(data);
             renderPagination(data.length);
@@ -967,6 +1093,15 @@
 
         // 页面加载时加载数据
         window.onload = loadData;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log('%c尊重开源作者', 'color: #333; font-size: 12px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #ccc; padding-bottom: 3px;');
+            console.log('%c感谢您使用本项目！', 'color: #666; font-size: 11px; margin-top: 5px; margin-bottom: 5px;');
+            console.log('%c作者: HChaohui', 'color: #007BFF; font-size: 12px; font-weight: bold; margin-bottom: 5px;');
+            console.log('%c开源地址: %chttps://github.com/HChaoHui/msOauth2api', 'color: #007BFF; font-size: 12px; font-weight: bold;', 'color: #007BFF; font-size: 12px; text-decoration: underline; cursor: pointer;');
+            console.log('%c如需使用或修改本项目，请保留作者信息。感谢您的理解和支持！', 'color: #666; font-size: 11px; margin-top: 5px; margin-bottom: 5px;');
+        });
+
     </script>
 
 </body>
