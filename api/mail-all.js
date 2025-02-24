@@ -36,11 +36,11 @@ const generateAuthString = (user, accessToken) => {
 
 module.exports = async (req, res) => {
 
-    const { send_password } = req.method === 'GET' ? req.query : req.body;
+    const { password } = req.method === 'GET' ? req.query : req.body;
 
-    const expectedPassword = process.env.SEND_PASSWORD;
+    const expectedPassword = process.env.PASSWORD;
 
-    if (send_password !== expectedPassword) {
+    if (password !== expectedPassword) {
         return res.status(401).json({
             error: 'Authentication failed. Please provide valid credentials or contact administrator for access. Refer to API documentation for deployment details.'
         });
