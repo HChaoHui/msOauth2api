@@ -861,6 +861,11 @@
                             });
                         } else {
                             // 其他非 500 错误
+                            if (response.status == 401) {
+                                throw response;
+                                return
+                            }
+                            // 其他非 500 错误
                             throw new Error(`请求失败，状态码：${response.status}`);
                         }
                     }
@@ -882,8 +887,11 @@
                     }
                 })
                 .catch(error => {
-                    console.log(error); // 打印错误信息到控制台
-                    console.error('Error fetching mail data:', error);
+
+                    if (err.status == 401) {
+                        showModal('错误', '为了防止接口滥用，我们已增加密码验证功能。如需使用接口，请联系管理员获取密码或自行搭建服务。');
+                        return
+                    }
 
                     // 根据错误类型显示不同的提示
                     if (error.message.includes('服务器内部错误')) {
