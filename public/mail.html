@@ -684,6 +684,10 @@
         // 从 localStorage 加载数据
         function loadData() {
             const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            const password = localStorage.getItem('password') || '';
+            if (password) {
+                document.getElementById('password').value = password;
+            }
             renderTable(data);
             renderPagination(data.length);
             toggleNoData(data.length === 0);
