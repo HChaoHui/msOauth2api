@@ -1,0 +1,22 @@
+{
+  "name": "msoauth2api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "koa": "^2.16.0",
+    "koa-bodyparser": "^4.4.1",
+    "koa-router": "^13.0.1",
+    "koa-static": "^5.0.0",
+    "mailparser": "^3.7.2",
+    "node-imap": "^0.9.6",
+    "nodemailer": "^6.10.0"
+  }
+}
