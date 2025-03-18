@@ -783,7 +783,39 @@
             pagination.innerHTML = '';
 
             const totalPages = Math.ceil(totalItems / itemsPerPage);
-            for (let i = 1; i <= totalPages; i++) {
+            const maxButtons = 5; // 最多显示5个页码按钮
+
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage + 1 < maxButtons) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            // 添加“上一页”按钮
+            if (currentPage > 1) {
+                const prevButton = document.createElement('button');
+                prevButton.textContent = '上一页';
+                prevButton.onclick = () => changePage(currentPage - 1);
+                pagination.appendChild(prevButton);
+            }
+
+            // 添加第一页按钮
+            if (startPage > 1) {
+                const firstButton = document.createElement('button');
+                firstButton.textContent = '1';
+                firstButton.onclick = () => changePage(1);
+                pagination.appendChild(firstButton);
+
+                if (startPage > 2) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.textContent = '...';
+                    pagination.appendChild(ellipsis);
+                }
+            }
+
+            // 添加页码按钮
+            for (let i = startPage; i <= endPage; i++) {
                 const button = document.createElement('button');
                 button.textContent = i;
                 if (i === currentPage) {
@@ -791,6 +823,28 @@
                 }
                 button.onclick = () => changePage(i);
                 pagination.appendChild(button);
+            }
+
+            // 添加最后一页按钮
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.textContent = '...';
+                    pagination.appendChild(ellipsis);
+                }
+
+                const lastButton = document.createElement('button');
+                lastButton.textContent = totalPages;
+                lastButton.onclick = () => changePage(totalPages);
+                pagination.appendChild(lastButton);
+            }
+
+            // 添加“下一页”按钮
+            if (currentPage < totalPages) {
+                const nextButton = document.createElement('button');
+                nextButton.textContent = '下一页';
+                nextButton.onclick = () => changePage(currentPage + 1);
+                pagination.appendChild(nextButton);
             }
         }
 
@@ -888,7 +942,7 @@
                 .then(data => {
                     // 如果 data 存在（即不是 "Nothing to fetch" 的情况），更新全局邮件数据
                     if (data) {
-                        
+
                         mailData = data.data;
 
                         // 隐藏其他内容区域
