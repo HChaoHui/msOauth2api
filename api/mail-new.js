@@ -172,7 +172,7 @@ async function get_emails(access_token, mailbox) {
         console.log("Failed to obtain access token'");
         return;
     }
-    
+
     try {
         const response = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/${mailbox}/messages?$top=1&$orderby=receivedDateTime desc`, {
             method: 'GET',
@@ -222,7 +222,7 @@ module.exports = async (ctx, next) => {
 
     // 根据请求方法从 query 或 body 中获取参数
     const params = ctx.method === 'GET' ? ctx.query : ctx.request.body;
-    const { refresh_token, client_id, email, mailbox, response_type = 'json' } = params;
+    let { refresh_token, client_id, email, mailbox, response_type = 'json' } = params;
 
     // 检查是否缺少必要的参数
     if (!refresh_token || !client_id || !email || !mailbox) {
@@ -238,6 +238,18 @@ module.exports = async (ctx, next) => {
         if (graph_api_result.status) {
 
             console.log("是graph_api");
+
+            if (mailbox != "INBOX" && mailbox != "Junk") {
+                mailbox = "inbox";
+            }
+
+            if (mailbox == 'INBOX') {
+                mailbox = 'inbox';
+            }
+
+            if (mailbox == 'Junk') {
+                mailbox = 'junkemail';
+            }
 
             const result = await get_emails(graph_api_result.access_token, mailbox);
 

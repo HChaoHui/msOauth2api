@@ -203,7 +203,7 @@ module.exports = async (ctx, next) => {
     }
 
     // 根据请求方法从 query 或 body 中获取参数
-    const { refresh_token, client_id, email, mailbox } = ctx.method === 'GET' ? ctx.query : ctx.request.body;
+    let { refresh_token, client_id, email, mailbox } = ctx.method === 'GET' ? ctx.query : ctx.request.body;
 
     // 检查是否缺少必要的参数
     if (!refresh_token || !client_id || !email || !mailbox) {
@@ -219,6 +219,18 @@ module.exports = async (ctx, next) => {
         if (graph_api_result.status) {
 
             console.log("是graph_api");
+
+            if (mailbox != "INBOX" && mailbox != "Junk") {
+                mailbox = "inbox";
+            }
+
+            if (mailbox == 'INBOX') {
+                mailbox = 'inbox';
+            }
+
+            if (mailbox == 'Junk') {
+                mailbox = 'junkemail';
+            }
 
             const result = await get_emails(graph_api_result.access_token, mailbox);
 
