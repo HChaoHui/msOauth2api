@@ -1,6 +1,6 @@
 # 微软 OAuth2 API 无服务器版本
 
-> **服务器版本在vps分支**
+> **服务器版本看另一个仓库 https://github.com/HChaoHui/MS_OAuth2API_Next**
 
 🌟 **简化微软 OAuth2 认证流程，轻松集成到你的应用中！** 🌟
 

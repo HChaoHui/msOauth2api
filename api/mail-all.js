@@ -58,7 +58,7 @@ async function graph_api(refresh_token, client_id) {
     try {
         const data = JSON.parse(responseText);
 
-        if (data.scope.indexOf('https://graph.microsoft.com/Mail.ReadWrite') != -1) {
+        if (data.scope.indexOf('https://graph.microsoft.com/Mail.Read') != -1) {
             return {
                 access_token: data.access_token,
                 status: true
