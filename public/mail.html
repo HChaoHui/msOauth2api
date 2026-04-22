@@ -206,6 +206,49 @@
             background-color: #2980b9;
         }
 
+        .upload-section .paste-section {
+            margin-top: 20px;
+        }
+
+        .upload-section .paste-help {
+            margin: 0 0 10px;
+            color: #5f6b7a;
+            font-size: 13px;
+        }
+
+        .upload-section .paste-section textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #2c3e50;
+        }
+
+        .upload-section .paste-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .upload-section .paste-actions button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-section .paste-actions button:hover {
+            background-color: #2980b9;
+        }
+
         /* 表格样式 */
         .email-table,
         .mail-table {
@@ -531,6 +574,7 @@
         <ul>
             <li><a href="#" data-target="dashboard" class="active"><i class="fas fa-tachometer-alt"></i>仪表盘</a></li>
             <li><a href="#" data-target="emails"><i class="fas fa-envelope"></i>邮箱管理</a></li>
+            <li><a href="https://queqiao.online" data-external="true" target="_blank" rel="noopener noreferrer"><i class="fas fa-link"></i>codex&claude中转</a></li>
         </ul>
     </div>
 
@@ -552,15 +596,22 @@
             <div class="upload-section">
                 <div class="upload-box" id="upload-box">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <p>点击或拖拽文件到此处上传</p>
+                    <p>点击或拖拽 TXT 文件到这里导入</p>
                     <div class="file-info" id="file-info"></div>
                     <input type="file" id="file-input" accept=".txt">
                 </div>
                 <div class="delimiter-input">
-                    <input type="password" id="password" placeholder="输入验证密码 如未设置则留空" oninput="setPassword()">
-                    <input type="text" id="delimiter" placeholder="输入分隔符（如 ----）">
-                    <button onclick="importEmails()">导入邮箱</button>
+                    <input type="password" id="password" placeholder="选填：验证密码，未设置可留空" oninput="setPassword()">
+                    <input type="text" id="delimiter" value="----" placeholder="请输入分隔符，如 ----">
+                    <button onclick="importEmails()">文件导入</button>
                     <button class="delete-btn" onclick="batchDelete()">批量删除</button>
+                </div>
+                <div class="paste-section">
+                    <p class="paste-help">支持粘贴格式：email----password----clientId----refreshToken，每行一条。</p>
+                    <textarea id="paste-input" placeholder="请粘贴邮箱数据，每行一条&#10;示例：&#10;email----password----clientId----refreshToken&#10;user@outlook.com----password----client-id----refresh-token"></textarea>
+                    <div class="paste-actions">
+                        <button onclick="importEmailsFromText()">粘贴导入</button>
+                    </div>
                 </div>
             </div>
             <table class="email-table" id="email-table">
@@ -638,11 +689,13 @@
         </div>
     </div>
 
+    <script src="/mail-import-utils.js"></script>
     <script>
         // 全局变量，用于存储邮件数据
         let mailData = [];
         let currentMailPage = 1; // 当前邮件列表的页码
         const mailItemsPerPage = 10; // 每页显示的邮件数量
+        const mailImportUtils = window.MailImportUtils || {};
 
         // 显示 Loading
         function showLoading() {
@@ -661,6 +714,10 @@
         // 监听侧边栏链接的点击事件
         links.forEach(link => {
             link.addEventListener('click', (e) => {
+                if (link.dataset.external === 'true') {
+                    return;
+                }
+
                 e.preventDefault(); // 阻止默认跳转行为
 
                 // 移除所有链接的选中状态
@@ -1064,12 +1121,12 @@
             const fileInput = document.getElementById('file-input');
 
             if (!delimiter) {
-                showModal('错误', '请输入分隔符！');
+                showModal('错误', '请先确认分隔符。');
                 return;
             }
 
             if (fileInput.files.length === 0) {
-                showModal('错误', '请选择文件！');
+                showModal('错误', '请先选择要导入的 TXT 文件。');
                 return;
             }
 
@@ -1100,13 +1157,83 @@
                 // 重新加载数据
                 loadData();
 
-                showModal('导入成功', `成功导入 ${lines.length} 条数据！`);
+                showModal('导入成功', `成功导入 ${lines.length} 条邮箱数据。`);
             };
 
             reader.readAsText(file);
         }
 
         // 拖拽文件上传逻辑
+        function getImportedRows(content, delimiter) {
+            if (typeof mailImportUtils.parseEmailText !== 'function') {
+                showModal('错误', '导入组件加载失败，请刷新页面后重试。');
+                return [];
+            }
+
+            return mailImportUtils.parseEmailText(content, delimiter);
+        }
+
+        function saveImportedRows(rows) {
+            if (rows.length === 0) {
+                showModal('错误', '未识别到有效邮箱数据，请检查分隔符和导入格式。');
+                return false;
+            }
+
+            const data = JSON.parse(localStorage.getItem('emailData')) || [];
+            data.push(...rows);
+            localStorage.setItem('emailData', JSON.stringify(data));
+            loadData();
+            showModal('导入成功', `成功导入 ${rows.length} 条邮箱数据。`);
+            return true;
+        }
+
+        function importEmails() {
+            const delimiter = document.getElementById('delimiter').value.trim();
+            const fileInput = document.getElementById('file-input');
+
+            if (!delimiter) {
+                showModal('错误', '请先确认分隔符。');
+                return;
+            }
+
+            if (fileInput.files.length === 0) {
+                showModal('错误', '请先选择要导入的 TXT 文件。');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const content = e.target.result;
+                const rows = getImportedRows(content, delimiter);
+                saveImportedRows(rows);
+            };
+
+            reader.readAsText(file);
+        }
+
+        function importEmailsFromText() {
+            const delimiter = document.getElementById('delimiter').value.trim();
+            const pasteInput = document.getElementById('paste-input');
+            const content = pasteInput.value.trim();
+
+            if (!delimiter) {
+                showModal('错误', '请先确认分隔符。');
+                return;
+            }
+
+            if (!content) {
+                showModal('错误', '请先粘贴要导入的邮箱数据。');
+                return;
+            }
+
+            const rows = getImportedRows(content, delimiter);
+            if (saveImportedRows(rows)) {
+                pasteInput.value = '';
+            }
+        }
+
         const uploadBox = document.getElementById('upload-box');
         const fileInput = document.getElementById('file-input');
         const fileInfo = document.getElementById('file-info');
