@@ -1,5 +1,7 @@
 (function () {
   const mailImportUtils = window.MailImportUtils || {};
+  const ACCOUNT_STORAGE_KEY = 'mailAccounts';
+  const API_PASSWORD_KEY = 'password';
 
   let accounts = [];
   let selectedItems = [];
@@ -9,8 +11,33 @@
   let currentMailPage = 1;
   const mailItemsPerPage = 10;
 
-  function getAdminPassword() {
-    return localStorage.getItem('password') || '';
+  function getApiPassword() {
+    return localStorage.getItem(API_PASSWORD_KEY) || '';
+  }
+
+  function setStoredAccounts(nextAccounts) {
+    accounts = [...nextAccounts].sort((left, right) => {
+      return String(right.updatedAt || '').localeCompare(String(left.updatedAt || ''));
+    });
+    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accounts));
+  }
+
+  function loadStoredAccounts() {
+    try {
+      const raw = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      accounts = Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      accounts = [];
+    }
+  }
+
+  function createAccountId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return `local_${window.crypto.randomUUID().replace(/-/g, '')}`;
+    }
+
+    return `local_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   }
 
   function escapeHtml(value) {
@@ -44,37 +71,14 @@
     document.getElementById('mail-modal').style.display = 'none';
   }
 
-  function getRequestParams(req) {
-    return req || {};
-  }
-
-  async function apiGet(url, extraParams) {
-    const params = new URLSearchParams({
-      ...extraParams,
-      password: getAdminPassword(),
-    });
-    const response = await fetch(`${url}?${params.toString()}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      const error = new Error(errorText || 'Request failed');
-      error.status = response.status;
-      throw error;
-    }
-
-    return response.json();
-  }
-
   async function apiPost(url, payload) {
+    const password = getApiPassword();
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        ...payload,
-        password: getAdminPassword(),
-      }),
+      body: JSON.stringify(password ? { ...payload, password } : payload),
     });
 
     if (!response.ok) {
@@ -108,16 +112,32 @@
     document.getElementById('account-count').textContent = String(accounts.length);
   }
 
+  function ensureVisitorModeNote() {
+    const delimiterSection = document.querySelector('.delimiter-input');
+    if (!delimiterSection || document.getElementById('visitor-mode-note')) {
+      return;
+    }
+
+    const note = document.createElement('p');
+    note.id = 'visitor-mode-note';
+    note.className = 'paste-help';
+    note.textContent = '账号只保存在当前浏览器本地，不会上传到服务器账号池。清理浏览器数据后，本地账号也会一起清除。';
+    delimiterSection.insertAdjacentElement('afterend', note);
+  }
+
+  function updateUiCopy() {
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+      passwordInput.placeholder = '可选：接口访问密码，仅在你的浏览器本地保存';
+    }
+  }
+
   function toggleNoData() {
     document.getElementById('no-data').style.display = accounts.length ? 'none' : 'block';
   }
 
   function truncateToken(token) {
     return token || '';
-  }
-
-  function getShareUrl(account) {
-    return `${window.location.origin}/boobar?share=${encodeURIComponent(account.shareToken)}`;
   }
 
   function renderTable() {
@@ -137,8 +157,6 @@
         <td class="refresh-token" title="${escapeHtml(account.refreshToken)}">${escapeHtml(truncateToken(account.refreshToken))}</td>
         <td>
           <div class="table-actions">
-            <button class="secondary" onclick="copyShareLink('${escapeHtml(account.id)}')">分享链接</button>
-            <button class="secondary" onclick="resetShareLink('${escapeHtml(account.id)}')">重置链接</button>
             <button class="view" onclick="viewInbox('${escapeHtml(account.id)}')">收件箱</button>
             <button class="view" onclick="viewJunk('${escapeHtml(account.id)}')">垃圾箱</button>
             <button class="delete" onclick="deleteEmail('${escapeHtml(account.id)}')">删除</button>
@@ -282,22 +300,16 @@
     });
   }
 
-  async function loadData() {
-    showLoading();
-    try {
-      const result = await apiGet('/api/accounts/list');
-      accounts = Array.isArray(result.accounts) ? result.accounts : [];
-      updateDashboard();
-      renderTable();
-    } catch (error) {
-      if (error.status === 401) {
-        showModal('提示', '为了防止滥用，已增加密码验证功能。如需使用，请联系管理员获取密码或自行搭建服务。');
-      } else {
-        showModal('错误', '无法加载账号数据，请稍后重试。');
-      }
-    } finally {
-      hideLoading();
+  function loadData() {
+    loadStoredAccounts();
+    selectedItems = [];
+    currentPage = 1;
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) {
+      selectAll.checked = false;
     }
+    updateDashboard();
+    renderTable();
   }
 
   function getImportedRows(content, delimiter) {
@@ -309,6 +321,47 @@
     return mailImportUtils.parseEmailText(content, delimiter);
   }
 
+  function mergeImportedRows(rows) {
+    const nextAccounts = [...accounts];
+    let importedCount = 0;
+
+    rows.forEach((row, index) => {
+      if (!row?.email || !row?.password || !row?.clientId || !row?.refreshToken) {
+        return;
+      }
+
+      const normalized = {
+        email: String(row.email).trim(),
+        password: String(row.password).trim(),
+        clientId: String(row.clientId).trim(),
+        refreshToken: String(row.refreshToken).trim(),
+      };
+
+      const existingIndex = nextAccounts.findIndex((account) => account.email === normalized.email);
+      const timestamp = new Date(Date.now() + index).toISOString();
+
+      if (existingIndex >= 0) {
+        nextAccounts[existingIndex] = {
+          ...nextAccounts[existingIndex],
+          ...normalized,
+          updatedAt: timestamp,
+        };
+      } else {
+        nextAccounts.push({
+          id: createAccountId(),
+          ...normalized,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        });
+      }
+
+      importedCount += 1;
+    });
+
+    setStoredAccounts(nextAccounts);
+    return importedCount;
+  }
+
   async function saveImportedRows(rows) {
     if (rows.length === 0) {
       showModal('错误', '未识别到有效邮箱数据，请检查分隔符和导入格式。');
@@ -317,20 +370,12 @@
 
     showLoading();
     try {
-      const result = await apiPost('/api/accounts/import', { rows });
-      accounts = Array.isArray(result.accounts) ? result.accounts : accounts;
+      const importedCount = mergeImportedRows(rows);
       currentPage = 1;
       updateDashboard();
       renderTable();
-      showModal('导入成功', `成功导入 ${result.importedCount} 条邮箱数据。`);
+      showModal('导入成功', `成功导入 ${importedCount} 条邮箱数据，数据仅保存在当前浏览器本地。`);
       return true;
-    } catch (error) {
-      if (error.status === 401) {
-        showModal('提示', '请输入正确的管理密码后再导入账号。');
-      } else {
-        showModal('错误', '导入失败，请检查数据格式后重试。');
-      }
-      return false;
     } finally {
       hideLoading();
     }
@@ -380,106 +425,70 @@
     }
   }
 
-  async function deleteEmail(accountId) {
-    if (!window.confirm('确定要删除这个账号吗？')) {
+  function deleteEmail(accountId) {
+    if (!window.confirm('确定要删除这个本地账号吗？')) {
       return;
     }
 
-    showLoading();
-    try {
-      await apiPost('/api/accounts/delete', { accountId });
-      await loadData();
-      showModal('删除成功', '账号已成功删除。');
-    } catch (error) {
-      showModal('错误', '删除失败，请稍后重试。');
-      hideLoading();
-    }
+    setStoredAccounts(accounts.filter((account) => account.id !== accountId));
+    selectedItems = selectedItems.filter((item) => item !== accountId);
+    updateDashboard();
+    renderTable();
+    showModal('删除成功', '本地账号已删除。');
   }
 
-  async function batchDelete() {
+  function batchDelete() {
     if (selectedItems.length === 0) {
       showModal('提示', '请先勾选要删除的账号。');
       return;
     }
 
-    if (!window.confirm(`确定要批量删除选中的 ${selectedItems.length} 个账号吗？`)) {
+    if (!window.confirm(`确定要批量删除本地保存的 ${selectedItems.length} 个账号吗？`)) {
       return;
     }
 
-    showLoading();
-    try {
-      await apiPost('/api/accounts/batch-delete', {
-        accountIds: selectedItems,
-      });
-      selectedItems = [];
-      document.getElementById('select-all').checked = false;
-      await loadData();
-      showModal('删除成功', '批量删除已完成。');
-    } catch (error) {
-      showModal('错误', '批量删除失败，请稍后重试。');
-      hideLoading();
-    }
+    const idSet = new Set(selectedItems);
+    setStoredAccounts(accounts.filter((account) => !idSet.has(account.id)));
+    selectedItems = [];
+    document.getElementById('select-all').checked = false;
+    updateDashboard();
+    renderTable();
+    showModal('删除成功', '已从当前浏览器删除所选账号。');
   }
 
-  async function copyShareLink(accountId) {
-    const account = accounts.find((item) => item.id === accountId);
-
-    if (!account) {
-      showModal('错误', '未找到对应的账号记录。');
-      return;
-    }
-
-    const shareUrl = getShareUrl(account);
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(shareUrl);
-      showModal('复制成功', `分享链接已复制：<br>${escapeHtml(shareUrl)}`);
-      return;
-    }
-
-    showModal('分享链接', escapeHtml(shareUrl));
-  }
-
-  async function resetShareLink(accountId) {
-    if (!window.confirm('确定要重置这个账号的分享链接吗？旧链接会立刻失效。')) {
-      return;
-    }
-
-    showLoading();
-    try {
-      const result = await apiPost('/api/accounts/reset-share', { accountId });
-      accounts = accounts.map((account) =>
-        account.id === accountId ? result.account : account
-      );
-      renderTable();
-      showModal('重置成功', '新的分享链接已经生成。');
-    } catch (error) {
-      showModal('错误', '重置分享链接失败，请稍后重试。');
-    } finally {
-      hideLoading();
-    }
+  function getAccountById(accountId) {
+    return accounts.find((account) => account.id === accountId) || null;
   }
 
   async function loadMailList(accountId, mailbox) {
+    const account = getAccountById(accountId);
+
+    if (!account) {
+      showModal('错误', '未找到对应的本地账号记录。');
+      return;
+    }
+
     showLoading();
     try {
-      const result = await apiGet('/api/accounts/mail-list', {
-        accountId,
+      const result = await apiPost('/api/mail-all', {
+        refresh_token: account.refreshToken,
+        client_id: account.clientId,
+        email: account.email,
         mailbox,
       });
 
-      mailData = Array.isArray(result.messages) ? result.messages : [];
+      mailData = Array.isArray(result) ? result : [];
       currentMailPage = 1;
       document.getElementById('mail-list-title').textContent =
         mailbox === 'Junk' ? '垃圾箱邮件列表' : '收件箱邮件列表';
-      document.getElementById('mail-list-subtitle').textContent = result.email;
+      document.getElementById('mail-list-subtitle').textContent = account.email;
       renderMailTable();
       showSection('mail-list');
     } catch (error) {
       if (error.status === 401) {
-        showModal('提示', '请输入正确的管理密码后再查看邮件。');
+        showModal('提示', '接口启用了访问密码，请先输入正确密码后再查邮件。');
       } else {
-        showModal('错误', '无法加载邮件列表，请稍后重试。');
+        showModal('错误', '无法加载邮件列表，请检查账号信息后重试。');
       }
     } finally {
       hideLoading();
@@ -526,11 +535,11 @@
 
   function setPassword() {
     const password = document.getElementById('password').value.trim();
-    localStorage.setItem('password', password);
+    localStorage.setItem(API_PASSWORD_KEY, password);
   }
 
   function initializePassword() {
-    const password = getAdminPassword();
+    const password = getApiPassword();
     if (password) {
       document.getElementById('password').value = password;
     }
@@ -538,6 +547,8 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     initializePassword();
+    ensureVisitorModeNote();
+    updateUiCopy();
     attachSidebarNavigation();
     attachSelectionHandlers();
     attachUploadHandlers();
@@ -554,8 +565,6 @@
   window.viewMail = viewMail;
   window.deleteEmail = deleteEmail;
   window.batchDelete = batchDelete;
-  window.copyShareLink = copyShareLink;
-  window.resetShareLink = resetShareLink;
   window.closeModal = closeModal;
   window.closeMailModal = closeMailModal;
   window.setPassword = setPassword;
