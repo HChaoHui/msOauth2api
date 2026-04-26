@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   createAccountStoreFromEnv,
   createFileAccountStore,
+  createRedisAccountStore,
 } = require('../api/_lib/account-store');
 const { createShareTokenService } = require('../api/_lib/share-token');
 
@@ -180,4 +181,74 @@ test('account store factory uses Upstash REST storage when Redis env vars exist'
   assert.equal(accounts.length, 1);
   assert.equal(accounts[0].email, 'remote@example.com');
   assert.match(remoteState.snapshot, /remote@example\.com/);
+});
+
+test('redis account store persists accounts with a standard Redis client', async () => {
+  const state = new Map();
+  const client = {
+    async connect() {},
+    async get(key) {
+      return state.get(key) ?? null;
+    },
+    async set(key, value) {
+      state.set(key, value);
+    },
+    async quit() {},
+  };
+
+  const store = createRedisAccountStore({
+    redisOptions: {},
+    createRedisClientImpl: () => client,
+  });
+
+  await store.importAccounts([createAccount('redis@example.com', 'redis')]);
+
+  const accounts = await store.listAccounts();
+
+  assert.equal(accounts.length, 1);
+  assert.equal(accounts[0].email, 'redis@example.com');
+  assert.match(state.get('mail_share_accounts_v1'), /redis@example\.com/);
+});
+
+test('account store factory uses standard Redis storage when Redis connection env vars exist', async () => {
+  const state = new Map();
+  let capturedOptions = null;
+  const client = {
+    async connect() {},
+    async get(key) {
+      return state.get(key) ?? null;
+    },
+    async set(key, value) {
+      state.set(key, value);
+    },
+    async quit() {},
+  };
+
+  const store = createAccountStoreFromEnv({
+    env: {
+      REDIS_HOST: '127.0.0.1',
+      REDIS_PORT: '6379',
+      REDIS_PASSWORD: 'secret',
+      REDIS_DB: '2',
+    },
+    createRedisClientImpl(options) {
+      capturedOptions = options;
+      return client;
+    },
+  });
+
+  await store.importAccounts([createAccount('factory@example.com', 'factory')]);
+
+  const accounts = await store.listAccounts();
+
+  assert.equal(accounts.length, 1);
+  assert.equal(accounts[0].email, 'factory@example.com');
+  assert.deepEqual(capturedOptions, {
+    socket: {
+      host: '127.0.0.1',
+      port: 6379,
+    },
+    password: 'secret',
+    database: 2,
+  });
 });

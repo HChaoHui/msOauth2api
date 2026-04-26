@@ -1,8 +1,10 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { createClient } = require('redis');
 
 const UPSTASH_STORE_KEY = 'mail_share_accounts_v1';
+const REDIS_STORE_KEY = 'mail_share_accounts_v1';
 
 function createAccountId() {
   return `acct_${crypto.randomUUID().replace(/-/g, '')}`;
@@ -209,13 +211,102 @@ function createUpstashAccountStore({
   });
 }
 
+function toInteger(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function buildRedisOptionsFromEnv(env = process.env) {
+  if (env.REDIS_URL) {
+    const options = {
+      url: env.REDIS_URL,
+      database: toInteger(env.REDIS_DB),
+    };
+
+    if (env.REDIS_USERNAME) {
+      options.username = env.REDIS_USERNAME;
+    }
+
+    if (env.REDIS_PASSWORD) {
+      options.password = env.REDIS_PASSWORD;
+    }
+
+    return options;
+  }
+
+  const options = {
+    socket: {
+      host: env.REDIS_HOST || '127.0.0.1',
+      port: toInteger(env.REDIS_PORT) || 6379,
+    },
+    database: toInteger(env.REDIS_DB),
+  };
+
+  if (env.REDIS_USERNAME) {
+    options.username = env.REDIS_USERNAME;
+  }
+
+  if (env.REDIS_PASSWORD) {
+    options.password = env.REDIS_PASSWORD;
+  }
+
+  return options;
+}
+
+function createRedisAccountStore({
+  redisOptions,
+  createRedisClientImpl = createClient,
+  key = REDIS_STORE_KEY,
+}) {
+  if (!redisOptions) {
+    throw new Error('redisOptions are required');
+  }
+
+  async function withClient(run) {
+    const client = createRedisClientImpl(redisOptions);
+    await client.connect();
+
+    try {
+      return await run(client);
+    } finally {
+      await client.quit();
+    }
+  }
+
+  return createAccountStore({
+    async loadAccounts() {
+      return withClient(async (client) => parseSnapshot(await client.get(key)));
+    },
+    async saveAccounts(accounts) {
+      await withClient(async (client) => {
+        await client.set(key, stringifySnapshot(accounts));
+      });
+    },
+  });
+}
+
 module.exports = {
-  createAccountStoreFromEnv({ env = process.env, fetchImpl = fetch } = {}) {
+  createAccountStoreFromEnv({
+    env = process.env,
+    fetchImpl = fetch,
+    createRedisClientImpl,
+  } = {}) {
     if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
       return createUpstashAccountStore({
         url: env.UPSTASH_REDIS_REST_URL,
         token: env.UPSTASH_REDIS_REST_TOKEN,
         fetchImpl,
+      });
+    }
+
+    if (env.REDIS_URL || env.REDIS_HOST) {
+      return createRedisAccountStore({
+        redisOptions: buildRedisOptionsFromEnv(env),
+        createRedisClientImpl,
       });
     }
 
@@ -226,5 +317,7 @@ module.exports = {
     });
   },
   createFileAccountStore,
+  createRedisAccountStore,
   createUpstashAccountStore,
+  buildRedisOptionsFromEnv,
 };

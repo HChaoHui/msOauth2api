@@ -25,6 +25,56 @@
    - 部署完成后，你可以通过访问 `https://your-vercel-app.vercel.app` 查看接口文档来进行使用。
    - **注意**：Vercel 的链接在国内可能无法访问，请使用自己的域名进行 CNAME 解析或使用 Cloudflare 进行代理。
 
+## Docker / 宝塔部署
+
+这个仓库现在也可以作为常驻 Node 服务运行，并通过 Docker 部署到宝塔面板。
+
+### 数据存储
+
+- 优先支持 **标准 Redis**，适合直接连接宝塔面板里的 Redis 服务。
+- 如果配置了 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`，会改用 Upstash Redis REST。
+- 如果 Redis 配置都不存在，才会回退到本地 `data/accounts.json` 文件存储。
+
+标准 Redis 支持以下环境变量：
+
+- `REDIS_HOST`：Redis 主机地址
+- `REDIS_PORT`：Redis 端口，默认 `6379`
+- `REDIS_PASSWORD`：Redis 密码，没有可以留空
+- `REDIS_DB`：Redis 数据库编号，默认 `0`
+- `REDIS_USERNAME`：可选，Redis 用户名
+- `REDIS_URL`：可选，使用单个连接串代替上面的分项配置
+- `PASSWORD`：后台管理密码
+- `SHARE_TOKEN_SECRET`：分享链接签名密钥
+
+### 本地 Docker 运行
+
+```bash
+docker compose up -d --build
+```
+
+默认服务端口为 `3000`，容器启动命令会运行：
+
+```bash
+node scripts/local-dev-server.js
+```
+
+### 宝塔部署步骤
+
+1. 在宝塔服务器上安装 Docker 和 Docker Compose 插件。
+2. 在宝塔中准备好可访问的 Redis 实例，记下主机、端口、密码和数据库编号。
+3. 拉取本仓库代码后，修改 `docker-compose.yml` 里的 `PASSWORD`、`SHARE_TOKEN_SECRET`、`REDIS_HOST`、`REDIS_PORT`、`REDIS_PASSWORD`、`REDIS_DB`。
+4. 在项目目录执行 `docker compose up -d --build` 启动容器。
+5. 在宝塔网站里为 `mail.manyaccs.com` 创建站点或反向代理，把请求转发到宿主机 `127.0.0.1:3000`。
+6. 域名在 Cloudflare 开启代理时，HTTPS 由 Cloudflare 负责，容器内部只需要提供 HTTP 服务。
+
+### 适合 `mail.manyaccs.com` 的建议
+
+- Cloudflare 负责外网 HTTPS
+- 宝塔负责域名绑定和反向代理
+- 应用容器只负责监听 `3000`
+- `docker-compose.yml` 默认只把端口绑定到宿主机 `127.0.0.1`，更适合交给宝塔反向代理
+- Redis 负责账号数据持久化
+
 ## 📚 API 文档
 
 ### 📧 获取最新的一封邮件

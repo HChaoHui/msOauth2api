@@ -3,3 +3,4 @@ node_modules/
 .local-dev*.log
 .local-dev*.cfg
 .vercel-dev*.log
+data/
