@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+    container_name: ms-oauth2api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      PASSWORD: change-me
+      SHARE_TOKEN_SECRET: change-me-too
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0

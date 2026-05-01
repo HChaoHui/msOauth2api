@@ -9,6 +9,12 @@
       "maxDuration": 60
     }
   },
+  "rewrites": [
+    {
+      "source": "/boobar",
+      "destination": "/boobar.html"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

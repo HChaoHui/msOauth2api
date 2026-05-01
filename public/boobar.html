@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享邮箱列表</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #eef5fb 0%, #f7f9fc 100%);
+            color: #243447;
+        }
+
+        .page {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .hero,
+        .panel {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(28, 45, 65, 0.08);
+        }
+
+        .hero {
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: clamp(28px, 4vw, 40px);
+        }
+
+        .hero p {
+            margin: 0;
+            color: #5f6b7a;
+        }
+
+        .folder-switch {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .folder-switch button,
+        .pagination button,
+        .mail-modal-content button {
+            border: none;
+            border-radius: 10px;
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 10px 14px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .folder-switch button.secondary {
+            background-color: #95a5a6;
+        }
+
+        .panel {
+            padding: 20px;
+        }
+
+        .status {
+            min-height: 24px;
+            margin-bottom: 14px;
+            color: #5f6b7a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9eef3;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .pagination button.active {
+            background-color: #243447;
+        }
+
+        .no-data {
+            padding: 20px;
+            text-align: center;
+            color: #7f8c8d;
+        }
+
+        .mail-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.45);
+        }
+
+        .mail-modal-content {
+            width: min(720px, calc(100% - 32px));
+            max-height: calc(100vh - 32px);
+            overflow: auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="hero">
+            <h1 id="share-email">共享邮箱列表</h1>
+            <p id="share-status" class="status">正在读取分享链接...</p>
+            <div class="folder-switch">
+                <button id="folder-inbox" type="button">收件箱</button>
+                <button id="folder-junk" type="button" class="secondary">垃圾箱</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <table id="mail-table">
+                <thead>
+                    <tr>
+                        <th>发件人</th>
+                        <th>主题</th>
+                        <th>日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="no-data" id="no-data">暂无数据</div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <div class="mail-modal" id="mail-modal">
+        <div class="mail-modal-content">
+            <h3 id="mail-modal-title"></h3>
+            <p id="mail-modal-sender"></p>
+            <p id="mail-modal-subject"></p>
+            <p id="mail-modal-date"></p>
+            <div id="mail-modal-content"></div>
+            <button onclick="closeMailModal()">关闭</button>
+        </div>
+    </div>
+
+    <script src="/boobar-app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+.git
+.gitignore
+.venv
+data
+docs
+img
+node_modules
+tests
+*.log
