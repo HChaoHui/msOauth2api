@@ -72,7 +72,7 @@
 
 ## 🖼️ 效果图
 
-![Demo](https://raw.githubusercontent.com/HChaoHui/msOauth2api/refs/heads/main/img/demo.png)
+![Demo](https://raw.githubusercontent.com/HChaoHui/msOauth2api/refs/heads/main/img/demoV2.png)
 
 ## 📝 更新日志
 
