@@ -74,6 +74,34 @@
 
 ![Demo](https://raw.githubusercontent.com/HChaoHui/msOauth2api/refs/heads/main/img/demo.png)
 
+## 📝 更新日志
+
+### v2.0.0 (2026-05-24)
+
+**全新 UI 重构**
+- 采用极简主义设计风格，黑白灰配色
+- 移除侧边栏和仪表盘，简化页面结构
+- 响应式布局，支持移动端
+
+**功能优化**
+- 工具栏整合：搜索账号、验证密码、导入账号、批量删除
+- 密码独立设置，不再放在导入弹窗中
+- Refresh Token 列自动省略，悬停显示完整内容
+- 搜索功能简化，仅支持按账号搜索
+- 分隔符默认值设为 `----`
+
+**AI 解读功能**
+- 新增 `/api/ai` 代理接口，保护 API Key 安全
+- 支持 OpenAI 兼容格式 SSE 流式输出
+- 实时显示 AI 思考过程（reasoning）
+- Markdown 格式摘要渲染
+- 密码验证保护，防止滥用
+
+**技术改进**
+- CSS/JS 文件分离，便于维护
+- IIFE 模块化 JavaScript
+- 事件委托优化交互绑定
+
 ## 🤝 贡献
 
 欢迎大家贡献代码！如果你有任何问题或建议，请提交 [Issue](https://github.com/HChaoHui/msOauth2api/issues) 或联系作者邮箱：**[z@unix.xin]**。
