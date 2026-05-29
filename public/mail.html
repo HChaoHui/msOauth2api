@@ -24,10 +24,19 @@
       <!-- 账号列表区域 -->
       <div id="account-section" class="section active">
         <div class="toolbar" id="toolbar">
-          <input type="text" class="search-input" id="search-input" placeholder="搜索账号">
-          <input type="password" class="password-input" id="toolbar-password" placeholder="验证密码">
-          <button class="btn btn-primary" data-action="import">+ 导入账号</button>
-          <button class="btn btn-danger" data-action="delete">批量删除</button>
+          <label class="toolbar-field">
+            <span>搜索账号</span>
+            <input type="text" class="search-input" id="search-input" placeholder="输入邮箱地址">
+          </label>
+          <label class="toolbar-field">
+            <span>接口密码</span>
+            <input type="password" class="password-input" id="toolbar-password" placeholder="访问密码" title="用于访问受保护的 API 接口">
+          </label>
+          <div class="toolbar-actions">
+            <button class="btn btn-primary" data-action="import" title="从 txt 文件导入邮箱账号">+ 导入账号文件</button>
+            <button class="btn" data-action="refresh-token" title="刷新已勾选账号的 Refresh Token">刷新选中 Token</button>
+            <button class="btn btn-danger" data-action="delete" title="删除已勾选账号">删除选中账号</button>
+          </div>
         </div>
 
         <div class="table-wrap">
@@ -85,6 +94,10 @@
         </div>
       </div>
     </main>
+
+    <footer class="footer">
+      Powered by <a href="https://github.com/HChaoHui/msOauth2api" target="_blank" rel="noopener noreferrer">MS OAuth2API</a>
+    </footer>
   </div>
 
   <!-- 导入弹窗 -->
@@ -107,6 +120,40 @@
       <div class="modal-footer">
         <button class="btn" onclick="mailApp.closeModal()">取消</button>
         <button class="btn btn-primary" id="import-confirm">导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 刷新 Token 确认弹窗 -->
+  <div class="modal-overlay" id="refresh-token-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>确认刷新 Token</h3>
+      </div>
+      <div class="modal-body">
+        <p>确定刷新选中的 <strong id="refresh-token-count">0</strong> 个账号 Token？</p>
+        <p>刷新成功后会覆盖本地保存的 Refresh Token。</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="refresh-token-cancel">取消</button>
+        <button class="btn btn-primary" id="refresh-token-confirm">确认刷新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量删除确认弹窗 -->
+  <div class="modal-overlay" id="delete-confirm-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>确认删除账号</h3>
+      </div>
+      <div class="modal-body">
+        <p>确定删除选中的 <strong id="delete-confirm-count">0</strong> 个账号？</p>
+        <p>删除后本地保存的账号信息将无法恢复。</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="delete-confirm-cancel">取消</button>
+        <button class="btn btn-danger" id="delete-confirm-submit">确认删除</button>
       </div>
     </div>
   </div>

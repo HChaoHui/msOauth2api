@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
 
     if (password !== expectedPassword) {
         return res.status(401).json({
-            error: 'Authentication failed. Please provide valid credentials or contact administrator for access. Refer to API documentation for deployment details.'
+            error: '密码验证失败'
         });
     }
 

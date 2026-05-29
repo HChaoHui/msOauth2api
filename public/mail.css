@@ -29,6 +29,7 @@
 
 html, body {
   width: 100%;
+  height: 100%;
 }
 
 body {
@@ -36,7 +37,8 @@ body {
   background: var(--gray-50);
   color: var(--gray-900);
   line-height: 1.5;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ---------- 容器 ---------- */
@@ -44,6 +46,9 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ---------- 头部 ---------- */
@@ -63,20 +68,45 @@ body {
   border-radius: var(--radius);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .section {
   display: none;
+  min-height: 0;
 }
 
 .section.active {
-  display: block;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 /* ---------- 工具栏 ---------- */
 .toolbar {
   padding: 12px 16px;
   border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.toolbar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toolbar-field span {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.toolbar-actions {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -134,7 +164,8 @@ body {
 }
 
 .btn-danger {
-  color: var(--gray-700);
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 .btn-danger:hover {
@@ -150,7 +181,9 @@ body {
 
 /* ---------- 表格 ---------- */
 .table-wrap {
-  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .table {
@@ -163,6 +196,13 @@ body {
 .table td {
   padding: 10px 12px;
   border-bottom: 1px solid var(--gray-100);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table .check-col {
+  width: 56px;
+  text-align: center;
 }
 
 .table th {
@@ -172,6 +212,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: var(--gray-50);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table tr:hover td {
@@ -267,6 +310,10 @@ body {
 /* ---------- 邮件列表 ---------- */
 .mail-section {
   padding: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .mail-section h2 {
@@ -595,6 +642,25 @@ body {
   border-radius: var(--radius);
   font-size: 14px;
   z-index: 300;
+}
+
+/* ---------- 底部 ---------- */
+.footer {
+  flex-shrink: 0;
+  padding: 12px 0 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+.footer a {
+  color: var(--gray-600);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--black);
+  text-decoration: underline;
 }
 
 /* ---------- 移动端 ---------- */

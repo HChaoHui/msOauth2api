@@ -12,8 +12,11 @@
     MAIL_ITEMS_PER_PAGE: 10,
     DEFAULT_ITEMS_PER_PAGE: 10,
     API_BASE: '/api/mail-all',
-    AI_API: '/api/ai'
+    AI_API: '/api/ai',
+    REFRESH_TOKEN_API: '/api/refresh-token'
   }
+
+  const AUTH_ERROR_MESSAGE = '密码验证失败，请输入正确验证密码'
 
   let aiController = null
   let currentAiMailIndex = null
@@ -59,9 +62,10 @@
   /* ---------- 账号列表相关 ---------- */
   const getFilteredData = () => {
     const data = getEmailData()
-    if (!state.searchKeyword) return data
+    const indexedData = data.map((item, index) => ({ ...item, index }))
+    if (!state.searchKeyword) return indexedData
     const kw = state.searchKeyword.toLowerCase()
-    return data.filter(item =>
+    return indexedData.filter(item =>
       item.email.toLowerCase().includes(kw)
     )
   }
@@ -73,21 +77,26 @@
     const end = start + state.itemsPerPage
     const pageData = filtered.slice(start, end)
 
+    const formatRefreshToken = (token) => {
+      if (!token || token.length <= 16) return token || ''
+      return `${token.slice(0, 6)}...${token.slice(-10)}`
+    }
+
     if (pageData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">暂无数据</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">暂无数据</td></tr>`
+      updateSelectAllState()
       return
     }
 
-    tbody.innerHTML = pageData.map((item, i) => {
-      const globalIndex = start + i
+    tbody.innerHTML = pageData.map((item) => {
       return `
-        <tr data-index="${globalIndex}">
+        <tr data-index="${item.index}">
           <td class="check-col">
-            <input type="checkbox" data-email="${item.email}" ${state.selectedItems.includes(item.email) ? 'checked' : ''}>
+            <input type="checkbox" data-index="${item.index}" ${state.selectedItems.includes(String(item.index)) ? 'checked' : ''}>
           </td>
           <td class="text-ellipsis" title="${item.email}">${item.email}</td>
           <td class="text-ellipsis" title="${item.clientId}">${item.clientId}</td>
-          <td class="refresh-token" title="${item.refreshToken}">${item.refreshToken}</td>
+          <td class="refresh-token" title="${item.refreshToken}">${formatRefreshToken(item.refreshToken)}</td>
           <td>
             <div class="actions">
               <button class="btn btn-sm" data-action="inbox">收件箱</button>
@@ -98,6 +107,19 @@
         </tr>
       `
     }).join('')
+
+    updateSelectAllState()
+  }
+
+  const updateSelectAllState = () => {
+    const selectAll = $('#select-all')
+    if (!selectAll) return
+
+    const filteredIndexes = getFilteredData().map(item => String(item.index))
+    const selectedCount = filteredIndexes.filter(index => state.selectedItems.includes(index)).length
+
+    selectAll.checked = filteredIndexes.length > 0 && selectedCount === filteredIndexes.length
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < filteredIndexes.length
   }
 
   const renderPagination = () => {
@@ -136,7 +158,7 @@
     data.splice(index, 1)
     setEmailData(data)
     state.emailData = data
-    state.selectedItems = state.selectedItems.filter(e => e !== data[index]?.email)
+    state.selectedItems = []
     render()
   }
 
@@ -145,14 +167,98 @@
       showToast('请先选择要删除的账号')
       return
     }
-    if (!confirm(`确定删除选中的 ${state.selectedItems.length} 个账号？`)) return
 
-    const data = getEmailData().filter(item => !state.selectedItems.includes(item.email))
+    $('#delete-confirm-count').textContent = state.selectedItems.length
+    openModal('delete-confirm-modal')
+  }
+
+  const executeBatchDelete = () => {
+    const selectedIndexes = new Set(state.selectedItems.map(Number))
+    const data = getEmailData().filter((item, index) => !selectedIndexes.has(index))
     setEmailData(data)
     state.emailData = data
     state.selectedItems = []
+    closeModal('delete-confirm-modal')
     render()
     showToast('删除成功')
+  }
+
+  const refreshMicrosoftToken = async (mail) => {
+    const tokenResponse = await fetch(CONFIG.REFRESH_TOKEN_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: mail.clientId,
+        refresh_token: mail.refreshToken,
+        password: getPassword()
+      })
+    })
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json().catch(() => ({}))
+      const error = new Error(errorData.error || `请求失败: ${tokenResponse.status}`)
+      error.status = tokenResponse.status
+      throw error
+    }
+
+    const data = await tokenResponse.json()
+    return data.refresh_token || mail.refreshToken
+  }
+
+  const batchRefreshTokens = async () => {
+    if (state.selectedItems.length === 0) {
+      showToast('请先选择要刷新 Token 的账号')
+      return
+    }
+
+    $('#refresh-token-count').textContent = state.selectedItems.length
+    openModal('refresh-token-modal')
+  }
+
+  const executeBatchRefreshTokens = async () => {
+    if (state.selectedItems.length === 0) {
+      closeModal('refresh-token-modal')
+      showToast('请先选择要刷新 Token 的账号')
+      return
+    }
+
+    closeModal('refresh-token-modal')
+    showLoading()
+    const data = getEmailData()
+    let successCount = 0
+    let failCount = 0
+    let authFailed = false
+
+    const selectedIndexes = new Set(state.selectedItems.map(Number))
+
+    for (const [index, item] of data.entries()) {
+      if (!selectedIndexes.has(index)) continue
+
+      try {
+        item.refreshToken = await refreshMicrosoftToken(item)
+        successCount++
+      } catch (err) {
+        if (err.status === 401) {
+          authFailed = true
+          break
+        }
+        failCount++
+        console.error(`刷新 ${item.email} Token 失败:`, err)
+      }
+    }
+
+    setEmailData(data)
+    state.emailData = data
+    render()
+    hideLoading()
+
+    if (authFailed) {
+      showToast(AUTH_ERROR_MESSAGE)
+    } else if (failCount > 0) {
+      showToast(`刷新完成，成功 ${successCount} 个，失败 ${failCount} 个`)
+    } else {
+      showToast(`刷新成功，共 ${successCount} 个`)
+    }
   }
 
   /* ---------- 导入 ---------- */
@@ -229,7 +335,7 @@
       })
       .catch(err => {
         if (err.status === 401) {
-          showToast('密码验证失败，请联系管理员')
+          showToast(AUTH_ERROR_MESSAGE)
         } else {
           showToast(err.message || '加载失败')
         }
@@ -425,6 +531,7 @@ ${item.text || item.html || '(无内容)'}
 
       if (!response.ok) {
         const err = await response.json()
+        if (response.status === 401) throw new Error(AUTH_ERROR_MESSAGE)
         throw new Error(err.error || `请求失败: ${response.status}`)
       }
 
@@ -547,6 +654,9 @@ ${item.text || item.html || '(无内容)'}
         case 'import':
           openModal('import-modal')
           break
+        case 'refresh-token':
+          batchRefreshTokens()
+          break
         case 'delete':
           batchDelete()
           break
@@ -577,13 +687,28 @@ ${item.text || item.html || '(无内容)'}
 
     // 全选
     $('#select-all').addEventListener('change', e => {
-      $$('#email-table tbody input[type="checkbox"]').forEach(cb => cb.checked = e.target.checked)
-      updateSelectedItems()
+      const filteredIndexes = getFilteredData().map(item => String(item.index))
+
+      if (e.target.checked) {
+        state.selectedItems = [...new Set([...state.selectedItems, ...filteredIndexes])]
+      } else {
+        state.selectedItems = state.selectedItems.filter(index => !filteredIndexes.includes(index))
+      }
+
+      render()
     })
 
     // 单选
     $('#email-table tbody').addEventListener('change', e => {
-      if (e.target.type === 'checkbox') updateSelectedItems()
+      if (e.target.type !== 'checkbox') return
+
+      if (e.target.checked) {
+        state.selectedItems = [...new Set([...state.selectedItems, e.target.dataset.index])]
+      } else {
+        state.selectedItems = state.selectedItems.filter(index => index !== e.target.dataset.index)
+      }
+
+      updateSelectAllState()
     })
 
     // 分页点击
@@ -637,6 +762,14 @@ ${item.text || item.html || '(无内容)'}
       closeModal('ai-modal')
     })
 
+    // 刷新 Token 确认弹窗
+    $('#refresh-token-cancel').addEventListener('click', () => closeModal('refresh-token-modal'))
+    $('#refresh-token-confirm').addEventListener('click', executeBatchRefreshTokens)
+
+    // 批量删除确认弹窗
+    $('#delete-confirm-cancel').addEventListener('click', () => closeModal('delete-confirm-modal'))
+    $('#delete-confirm-submit').addEventListener('click', executeBatchDelete)
+
     // 导入弹窗按钮
     $('#import-confirm').addEventListener('click', importEmails)
 
@@ -653,12 +786,6 @@ ${item.text || item.html || '(无内容)'}
     // 初始化密码值
     const pwd = getPassword()
     if (pwd) $('#toolbar-password').value = pwd
-  }
-
-  /* ---------- 更新选中项 ---------- */
-  const updateSelectedItems = () => {
-    state.selectedItems = $$('#email-table tbody input[type="checkbox"]:checked')
-      .map(cb => cb.dataset.email)
   }
 
   /* ---------- 初始化 ---------- */
