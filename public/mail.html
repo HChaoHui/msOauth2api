@@ -107,10 +107,23 @@
         <h3>导入账号</h3>
       </div>
       <div class="modal-body">
+        <!-- 导入方式切换 -->
+        <div class="form-group">
+          <label>导入方式</label>
+          <div class="import-tabs">
+            <button class="btn btn-sm import-tab active" data-import-type="file">文件导入</button>
+            <button class="btn btn-sm import-tab" data-import-type="paste">粘贴导入</button>
+          </div>
+        </div>
+        <!-- 文件上传区域 -->
         <div class="upload-box" id="upload-box">
           <p>点击或拖拽文件到此处上传</p>
           <p id="file-info"></p>
           <input type="file" id="import-file" accept=".txt">
+        </div>
+        <!-- 粘贴导入区域 -->
+        <div class="paste-area" id="paste-area" style="display:none;">
+          <textarea id="paste-content" placeholder="请粘贴账号数据，每行一条，格式：邮箱----密码----ClientId----RefreshToken" rows="10"></textarea>
         </div>
         <div class="form-group">
           <label>分隔符</label>
